@@ -119,6 +119,13 @@ var createCmd = &cobra.Command{
 	Run:   runCreate,
 }
 
+// Define List issues command
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List Jira issues",
+	Run:   runList,
+}
+
 // Define Main function
 func main() {
 	// Load configuration
@@ -127,6 +134,7 @@ func main() {
 	// Add subcommands
 	rootCmd.AddCommand(configureCmd)
 	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(listCmd)
 
 	// Execute root command
 	if err := rootCmd.Execute(); err != nil {
@@ -255,7 +263,7 @@ func runCreate(cmd *cobra.Command, args []string) {
 			IssueType: JiraIssueType{
 				Name: issueType,
 			},
-			Summary: summary,
+			Summary:     summary,
 			Description: description,
 		},
 	}
@@ -284,4 +292,59 @@ func runCreate(cmd *cobra.Command, args []string) {
 
 	successColor.Printf("✓ Issue created successfully: %s\n", createdIssue.Key)
 	infoColor.Printf("URL: %s/browse/%s\n", config.BaseURL, createdIssue.Key)
+}
+
+// Define List issues function
+func runList(cmd *cobra.Command, args []string) {
+	headerColor.Println("=== List Jira Issues ===")
+
+	// Get user input for JQL
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter JQL query (or press Enter for default): ")
+	jql, _ := reader.ReadString('\n')
+	jql = strings.TrimSpace(jql)
+
+	if jql == "" {
+		jql = "assignee = currentuser() ORDER BY created DESC"
+	}
+
+	// List issues request
+	endpoint := "/search?jql=" + jql + "&maxResults=10"
+	resp, err := makeJiraRequest("GET", endpoint, nil)
+	if err != nil {
+		errorColor.Printf("Error fetching issues: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		errorColor.Printf("Failed to fetch issues. Status: %d\n", resp.StatusCode)
+		return
+	}
+
+	var searchResult struct {
+		Issues []JiraIssue `json:"issues"`
+		Total int `json:"total"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&searchResult); err != nil {
+		errorColor.Printf("Error parsing response: %v\n", err)
+		return
+	}
+
+	if len(searchResult.Issues) == 0 {
+		warningColor.Printf("No issues found")
+		return
+	}
+
+	// Display issues
+	fmt.Printf("\nFound %d issues:\n\n", len(searchResult.Issues))
+	for _, issue := range searchResult.Issues {
+		headerColor.Printf("Key: %s\n", issue.Key)
+		fmt.Printf("Summary: %s\n", issue.Fields.Summary)
+		if issue.Fields.Status != nil {
+			infoColor.Printf("Status: %s\n", issue.Fields.Status.Name)
+		}
+		fmt.Println(strings.Repeat("-", 50))
+	}
 }

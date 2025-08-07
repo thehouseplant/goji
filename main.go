@@ -8,49 +8,49 @@ func main() {
 
 // Define Configuration structure
 type Config struct {
-	BaseURL string `json:"base_url"`
-	Email string `json:"email"`
+	BaseURL  string `json:"base_url"`
+	Email    string `json:"email"`
 	APIToken string `json:"api_token"`
 }
 
 // Define Jira issue structures
 type JiraIssue struct {
-	ID string `json:"id,omitempty"`
-	Key	string `json:"key,omitempty"`
-	Self string `json:"self,omitempty"`
+	ID     string          `json:"id,omitempty"`
+	Key    string          `json:"key,omitempty"`
+	Self   string          `json:"self,omitempty"`
 	Fields JiraIssueFields `json:"fields"`
 }
 
 type JiraIssueFields struct {
-	Summary string `json:"summary"`
-	Description string `json:"desciption"`
-	IssueType JiraIssueType `json:"issuetype"`
-	Project JiraProject `json:"project"`
-	Priority *JiraPriority `json:"priority,omitempty`
-	Assignee *JiraUser `json:"assignee,omitempty`
-	Status *JiraStatus `json:"status,omitempty"`
-	Created string `json:"created,omitempty"`
-	Updated string `json:"updated,omitempty"`
+	Summary     string        `json:"summary"`
+	Description string        `json:"desciption"`
+	IssueType   JiraIssueType `json:"issuetype"`
+	Project     JiraProject   `json:"project"`
+	Priority    *JiraPriority `json:"priority,omitempty`
+	Assignee    *JiraUser     `json:"assignee,omitempty`
+	Status      *JiraStatus   `json:"status,omitempty"`
+	Created     string        `json:"created,omitempty"`
+	Updated     string        `json:"updated,omitempty"`
 }
 
 type JiraIssueType struct {
-	ID string `json:"id,omitempty"`
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 }
 
 type JiraProject struct {
-	Key string `json:"key"`
+	Key  string `json:"key"`
 	Name string `json:"name,omitempty"`
 }
 
 type JiraPriority struct {
-	ID string `json:"id,omitempty"`
+	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
 }
 
 type JiraUser struct {
-	AccountID string `json:"accountId,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
+	AccountID    string `json:"accountId,omitempty"`
+	DisplayName  string `json:"displayName,omitempty"`
 	EmailAddress string `json:"emailAddress,omitempty"`
 }
 

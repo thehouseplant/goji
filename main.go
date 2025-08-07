@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -110,6 +112,13 @@ var configureCmd = &cobra.Command{
 	Run:   runConfigure,
 }
 
+// Define Create issue command
+var createCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create a new Jira issue",
+	Run:   runCreate,
+}
+
 // Define Main function
 func main() {
 	// Load configuration
@@ -117,6 +126,7 @@ func main() {
 
 	// Add subcommands
 	rootCmd.AddCommand(configureCmd)
+	rootCmd.AddCommand(createCmd)
 
 	// Execute root command
 	if err := rootCmd.Execute(); err != nil {
@@ -208,4 +218,70 @@ func makeJiraRequest(method, endpoint string, body io.Reader) (*http.Response, e
 	req.Header.Set("Accept", "application/json")
 
 	return httpClient.Do(req)
+}
+
+// Define Create issue function
+func runCreate(cmd *cobra.Command, args []string) {
+	headerColor.Println("=== Create New Jira Issue ===")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	// Get project key
+	fmt.Print("Project Key: ")
+	projectKey, _ := reader.ReadString('\n')
+	projectKey = strings.TrimSpace(projectKey)
+
+	// Get issue type
+	fmt.Print("Issue Type (Bug/Task/Story): ")
+	issueType, _ := reader.ReadString('\n')
+	issueType = strings.TrimSpace(issueType)
+
+	// Get summary
+	fmt.Print("Summary: ")
+	summary, _ := reader.ReadString('\n')
+	summary = strings.TrimSpace(summary)
+
+	// Get description
+	fmt.Print("Description: ")
+	description, _ := reader.ReadString('\n')
+	description = strings.TrimSpace(description)
+
+	// Create issue request
+	issueRequest := JiraCreateIssueRequest{
+		Fields: JiraIssueFields{
+			Project: JiraProject{
+				Key: projectKey,
+			},
+			IssueType: JiraIssueType{
+				Name: issueType,
+			},
+			Summary: summary,
+			Description: description,
+		},
+	}
+
+	// Send request
+	jsonData, _ := json.Marshal(issueRequest)
+	resp, err := makeJiraRequest("POST", "/issue", bytes.NewBuffer(jsonData))
+	if err != nil {
+		errorColor.Printf("Error creating issue: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		errorColor.Printf("Failed to create issue. Status %d\n", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("Response: %s\n", string(body))
+		return
+	}
+
+	var createdIssue JiraIssue
+	if err := json.NewDecoder(resp.Body).Decode(&createdIssue); err != nil {
+		errorColor.Printf("Error parsing response: %v\n", err)
+		return
+	}
+
+	successColor.Printf("✓ Issue created successfully: %s\n", createdIssue.Key)
+	infoColor.Printf("URL: %s/browse/%s\n", config.BaseURL, createdIssue.Key)
 }

@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -86,3 +88,8 @@ var (
 	infoColor    = color.New(color.FgCyan)
 	headerColor  = color.New(color.FgMagenta, color.Bold)
 )
+
+// Define HTTP client
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+}

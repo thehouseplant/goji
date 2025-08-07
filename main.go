@@ -128,9 +128,17 @@ var listCmd = &cobra.Command{
 
 // Define Show issue command
 var showCmd = &cobra.Command{
-	Use:   "show",
+	Use:   "show [issue-key]",
 	Short: "Show details of an issue",
 	Run:   runShow,
+}
+
+// Define Update issue command
+var updateCmd = &cobra.Command{
+	Use:   "update [issue-key]",
+	Short: "Update a Jira issue",
+	Args:  cobra.ExactArgs(1),
+	Run:   runUpdate,
 }
 
 // Define Main function
@@ -143,6 +151,7 @@ func main() {
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(showCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	// Execute root command
 	if err := rootCmd.Execute(); err != nil {
@@ -409,4 +418,62 @@ func runShow(cmd *cobra.Command, args []string) {
 	}
 
 	infoColor.Printf("\nURL: %s/browse/%s\n", config.BaseURL, issue.Key)
+}
+
+// Define Update issue logic
+func runUpdate(cmd *cobra.Command, args []string) {
+	issueKey := args[0]
+	headerColor.Printf("=== Update Issue: %s ===\n", issueKey)
+
+	reader := bufio.NewReader(os.Stdin)
+
+	updateFields := make(map[string]interface{})
+
+	// Get new summary
+	fmt.Print("New Summary (press Enter to skip): ")
+	summary, _ := reader.ReadString('\n')
+	summary = strings.TrimSpace(summary)
+	if summary != "" {
+		updateFields["summary"] = summary
+	}
+
+	// Get new description
+	fmt.Print("New Description (press Enter to skip): ")
+	description, _ := reader.ReadString('\n')
+	description = strings.TrimSpace(description)
+	if description != "" {
+		updateFields["description"] = description
+	}
+
+	if len(updateFields) == 0 {
+		warningColor.Println("No fields to update")
+		return
+	}
+
+	// Create update request
+	updateRequest := JiraUpdateIssueRequest{
+		Fields: updateFields,
+	}
+
+	jsonData, _ := json.Marshal(updateRequest)
+	resp, err := makeJiraRequest("PUT", "/issue/"+issueKey, bytes.NewBuffer(jsonData))
+	if err != nil {
+		errorColor.Printf("Error updating issue: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		errorColor.Printf("Issue %s not found\n", issueKey)
+		return
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		errorColor.Printf("Failed to update issue. Status: %d\n", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("Response: %s\n", string(body))
+		return
+	}
+
+	successColor.Printf("✓ Issue %s updated successfully\n", issueKey)
 }

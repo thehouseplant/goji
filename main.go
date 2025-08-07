@@ -1,18 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
-
-func main() {
-	fmt.Println("Hello world")
-}
 
 // Define Configuration structure
 type Config struct {
@@ -100,4 +101,92 @@ var rootCmd = &cobra.Command{
 	Use:   "goji",
 	Short: "An opinionated CLI tool for interacting with the Jira API",
 	Long:  "A comprehensive, opinionated command line interface for creating and managing Jira issues",
+}
+
+// Define Configure command
+var configureCmd = &cobra.Command{
+	Use:   "configure",
+	Short: "Configure Jira connection settings",
+	Run:   runConfigure,
+}
+
+// Define Main function
+func main() {
+	// Load configuration
+	loadConfig()
+
+	// Add subcommands
+	rootCmd.AddCommand(configureCmd)
+
+	// Execute root command
+	if err := rootCmd.Execute(); err != nil {
+		errorColor.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// Define Configuration Load function
+func loadConfig() {
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		return
+	}
+
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		warningColor.Printf("Warning: Could not read configuration file: %v\n", err)
+		return
+	}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		warningColor.Printf("Warning: Could not parse configuration file: %v\n", err)
+	}
+}
+
+// Define Configuration Save function
+func saveConfig() error {
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configFile, data, 0600)
+}
+
+// Define Configure function
+func runConfigure(cmd *cobra.Command, args []string) {
+	headerColor.Println("=== Goji Configuration ===")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	// Get Jira base URL
+	fmt.Print("Jira Base URL (e.g., https://company.atlassian.net): ")
+	baseUrl, _ := reader.ReadString('\n')
+	config.BaseURL = strings.TrimSpace(baseUrl)
+
+	// Get email address
+	fmt.Print("Email: ")
+	email, _ := reader.ReadString('\n')
+	config.Email = strings.TrimSpace(email)
+
+	// Get API token
+	fmt.Print("API Token: ")
+	byteToken, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		errorColor.Printf("Error reading API token: %v\n", err)
+		return
+	}
+	fmt.Println()
+	config.APIToken = string(byteToken)
+
+	// Save configuration
+	if err := saveConfig(); err != nil {
+		errorColor.Printf("Error saving configuration: %v\n", err)
+		return
+	}
+
+	successColor.Println("✓ Configuration saved successfully!")
 }

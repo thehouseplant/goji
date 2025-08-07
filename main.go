@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -74,4 +76,13 @@ var (
 	config     Config
 	configDir  = os.Getenv("HOME") + "./goji"
 	configFile = configDir + "/config.json"
+)
+
+// Define color definitions
+var (
+	successColor = color.New(color.FgGreen, color.Bold)
+	errorColor   = color.New(color.FgRed, color.Bold)
+	warningColor = color.New(color.FgYellow, color.Bold)
+	infoColor    = color.New(color.FgCyan)
+	headerColor  = color.New(color.FgMagenta, color.Bold)
 )

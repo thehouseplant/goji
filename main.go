@@ -190,3 +190,22 @@ func runConfigure(cmd *cobra.Command, args []string) {
 
 	successColor.Println("✓ Configuration saved successfully!")
 }
+
+// Define API helper function
+func makeJiraRequest(method, endpoint string, body io.Reader) (*http.Response, error) {
+	if config.BaseURL == "" || config.Email == "" || config.APIToken == "" {
+		return nil, fmt.Errorf("Goji configuration has not been set. Run 'goji configure' first")
+	}
+
+	url := config.BaseURL + "/rest/api/3" + endpoint
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(config.Email, config.APIToken)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	return httpClient.Do(req)
+}

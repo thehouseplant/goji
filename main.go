@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 func main() {
@@ -92,4 +93,11 @@ var (
 // Define HTTP client
 var httpClient = &http.Client{
 	Timeout: 30 * time.Second,
+}
+
+// Define Root command
+var rootCmd = &cobra.Command{
+	Use:   "goji",
+	Short: "An opinionated CLI tool for interacting with the Jira API",
+	Long:  "A comprehensive, opinionated command line interface for creating and managing Jira issues",
 }

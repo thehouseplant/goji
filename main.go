@@ -295,7 +295,7 @@ func runCreate(cmd *cobra.Command, args []string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		errorColor.Printf("Failed to create issue. Status %d\n", resp.StatusCode)
+		errorColor.Printf("Failed to create issue. Status: %d\n", resp.StatusCode)
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Printf("Response: %s\n", string(body))
 		return
@@ -322,7 +322,7 @@ func runList(cmd *cobra.Command, args []string) {
 	jql = strings.TrimSpace(jql)
 
 	if jql == "" {
-		jql = "assignee = currentuser() ORDER BY created DESC"
+		jql = "assignee = currentUser() ORDER BY created DESC"
 	}
 
 	// List issues request
@@ -350,7 +350,7 @@ func runList(cmd *cobra.Command, args []string) {
 	}
 
 	if len(searchResult.Issues) == 0 {
-		warningColor.Printf("No issues found")
+		warningColor.Println("No issues found")
 		return
 	}
 
@@ -371,9 +371,9 @@ func runShow(cmd *cobra.Command, args []string) {
 	issueKey := args[0]
 	headerColor.Printf("=== Issue Details: %s ===\n", issueKey)
 
-	resp, err := makeJiraRequest("GET", "/issue"+issueKey, nil)
+	resp, err := makeJiraRequest("GET", "/issue/"+issueKey, nil)
 	if err != nil {
-		errorColor.Printf("Error fetching issues: %v\n", err)
+		errorColor.Printf("Error fetching issue: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()

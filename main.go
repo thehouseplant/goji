@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
 	fmt.Println("Hello world")
@@ -65,3 +68,10 @@ type JiraCreateIssueRequest struct {
 type JiraUpdateIssueRequest struct {
 	Fields map[string]interface{} `json:"fields"`
 }
+
+// Define global variables
+var (
+	config     Config
+	configDir  = os.Getenv("HOME") + "./goji"
+	configFile = configDir + "/config.json"
+)

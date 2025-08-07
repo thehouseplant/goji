@@ -78,7 +78,7 @@ type JiraUpdateIssueRequest struct {
 // Define global variables
 var (
 	config     Config
-	configDir  = os.Getenv("HOME") + "./goji"
+	configDir  = os.Getenv("HOME") + "/goji"
 	configFile = configDir + "/config.json"
 )
 

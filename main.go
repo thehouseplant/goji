@@ -126,6 +126,13 @@ var listCmd = &cobra.Command{
 	Run:   runList,
 }
 
+// Define Show issue command
+var showCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show details of an issue",
+	Run:   runShow,
+}
+
 // Define Main function
 func main() {
 	// Load configuration
@@ -135,6 +142,7 @@ func main() {
 	rootCmd.AddCommand(configureCmd)
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(showCmd)
 
 	// Execute root command
 	if err := rootCmd.Execute(); err != nil {
@@ -324,7 +332,7 @@ func runList(cmd *cobra.Command, args []string) {
 
 	var searchResult struct {
 		Issues []JiraIssue `json:"issues"`
-		Total int `json:"total"`
+		Total  int         `json:"total"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&searchResult); err != nil {
@@ -347,4 +355,58 @@ func runList(cmd *cobra.Command, args []string) {
 		}
 		fmt.Println(strings.Repeat("-", 50))
 	}
+}
+
+// Define Show issue function
+func runShow(cmd *cobra.Command, args []string) {
+	issueKey := args[0]
+	headerColor.Printf("=== Issue Details: %s ===\n", issueKey)
+
+	resp, err := makeJiraRequest("GET", "/issue"+issueKey, nil)
+	if err != nil {
+		errorColor.Printf("Error fetching issues: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		errorColor.Printf("Issue %s not found\n", issueKey)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		errorColor.Printf("Failed to fetch issue. Status: %d\n", resp.StatusCode)
+		return
+	}
+
+	var issue JiraIssue
+	if err := json.NewDecoder(resp.Body).Decode(&issue); err != nil {
+		errorColor.Printf("Error parsing response: %v\n", err)
+		return
+	}
+
+	// Display issue details
+	fmt.Printf("Key: %s\n", issue.Key)
+	fmt.Printf("Summary: %s\n", issue.Fields.Summary)
+	fmt.Printf("Description: %s\n", issue.Fields.Description)
+	fmt.Printf("Issue Type: %s\n", issue.Fields.IssueType.Name)
+	fmt.Printf("Project: %s\n", issue.Fields.Project.Key)
+
+	if issue.Fields.Status != nil {
+		infoColor.Printf("Status: %s\n", issue.Fields.Status.Name)
+	}
+	if issue.Fields.Priority != nil {
+		fmt.Printf("Priority: %s\n", issue.Fields.Priority.Name)
+	}
+	if issue.Fields.Assignee != nil {
+		fmt.Printf("Assignee: %s\n", issue.Fields.Assignee.DisplayName)
+	}
+	if issue.Fields.Created != "" {
+		fmt.Printf("Created: %s\n", issue.Fields.Created)
+	}
+	if issue.Fields.Updated != "" {
+		fmt.Printf("Updated: %s\n", issue.Fields.Updated)
+	}
+
+	infoColor.Printf("\nURL: %s/browse/%s\n", config.BaseURL, issue.Key)
 }

@@ -37,8 +37,8 @@ type JiraIssueFields struct {
 	Description string        `json:"desciption"`
 	IssueType   JiraIssueType `json:"issuetype"`
 	Project     JiraProject   `json:"project"`
-	Priority    *JiraPriority `json:"priority,omitempty`
-	Assignee    *JiraUser     `json:"assignee,omitempty`
+	Priority    *JiraPriority `json:"priority,omitempty"`
+	Assignee    *JiraUser     `json:"assignee,omitempty"`
 	Status      *JiraStatus   `json:"status,omitempty"`
 	Created     string        `json:"created,omitempty"`
 	Updated     string        `json:"updated,omitempty"`

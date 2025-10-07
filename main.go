@@ -17,13 +17,6 @@ import (
 	"golang.org/x/term"
 )
 
-// Define Configuration structure
-type Config struct {
-	BaseURL  string `json:"base_url"`
-	Email    string `json:"email"`
-	APIToken string `json:"api_token"`
-}
-
 // Define Jira issue structures
 type JiraIssue struct {
 	ID     string          `json:"id,omitempty"`
